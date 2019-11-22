@@ -1,30 +1,32 @@
 class Curva:
     def __init__(self):
-        self.d = 0
-        self.e = 0 
-        self.p = 0
+        self.d = 1
+        self.e = 1 
+        self.p = 23
         self.k = 0
         self.pontos = []
         self.pontoEscolhido = []
         self.pontoR = []
+        self.Pm = []
+        self.mensagem = []
 
 def main():
    
-    curva = Curva()
-
-    curva = recebeParametros(curva)
-
     #Limpa o console
+    curva = Curva()   
     import os
     os.system('cls' if os.name == 'nt' else 'clear')
+
+    # função que calcula os pontos da curva E23(1,1)
     curva = encontraListaPontos(curva)
     PrintaParametros(curva)
     curva = escolhePonto(curva)
     curva = escolheK(curva)
-    curva = multiplicacaoModular(curva.k, curva.pontoEscolhido, curva.p, curva.d)#calculaR(curva)
+    curva.pontoR = multiplicacaoModular(curva.k, curva.pontoEscolhido, curva.p, curva.d)#calculaR(curva)
+   
     salvaEmArquivo(curva)
-    print(curva.pontoR)
-
+    
+#funcao para escolher o valor da chave privada do usuario
 def escolheK(curva): 
     k = -1
     while k < 1:
@@ -35,20 +37,25 @@ def escolheK(curva):
 
 
 ######################################################################
+#funcao de soma sobre a curva E23(1,1), a função recebe dois pontos P e Q e soma eles
+#o calculo do Lambda, usado na funcao de soma é feito em uma função a parte
 def somaModular(PontoP, PontoQ, p, d):
     
     P = PontoP
     Q = PontoQ
     Lambda  = calculaLambda(P, Q, d, p)
-    
+    if not Lambda:
+        return [0,0]
     xr = ( (Lambda**2) - P[0] - Q[0]) % p
     yr = ( Lambda * ( P[0] - xr) - P[1]) % p 
     P = [int(xr), int(yr)]
     return P
 
+#funcao que faz a multiplicação sobre a curva E23(1,1), a funcao recebe um k, um ponto P e faz a soma de P + Q k vezes
+#inserindo sempre resultado em P, lembrando que Q na primeira iteração tem o mesmo valor de P
 def multiplicacaoModular(k, Ponto, p, d):
     #criptografa cada bloco
-   
+    print("K= ", k, " Ponto= ", Ponto)
     P = Ponto
     Q = Ponto
     for i in range(int(k)): 
@@ -57,96 +64,43 @@ def multiplicacaoModular(k, Ponto, p, d):
     
     return P
 
+#função que calcula o Lambda para ser usado na funcao de soma sob a curva E23(1,1)
+#o calculo  do lambda e feito em partes, primeiro eu calculo a fração, separo o numerador e coloco na variavel a
+# o denominador na variavel b, apos isso eu faço o calculo do inverso do modulo, chamando a funcao modulo passando o numerador a
+# odenominador b o valor da curva no caso 23 e calculo o inverso do modulo. --- ((23 * n)+a) % 23 == 0  n tem que ser tal que 
+# modo que o resultado da funcao seja 0, dai eu retorno o valor de Lambda
 def calculaLambda(pontoP, pontoQ, d, p):
     
     if pontoP[0] == pontoQ[0] and pontoP[1] == pontoQ[1]:
         #formula de lambda para P = Q
-        a = (3 * (int(pontoP[0])**2))
-        b = (2 * pontoP[1])
-        return modulo(a, b, p)
-    else:
+        if pontoP[1] != 0:
+            a = (3 * (pontoP[0]**2)+d)
+            b = (2 * pontoP[1])
+            return modulo(a, b, p)
+        
+    elif pontoP[0] != pontoQ[0]:
         #Ponto
         a = (pontoQ[1] - pontoP[1]) 
         b = (pontoQ[0] - pontoP[0])
         return modulo(a, b, p)
+    return False
 
-def divisaoMod(ponto, pontoEscolhido, p, d):
-    aux = []
-    
-    aux.append(pontoEscolhido[0])
-    aux.append( pontoEscolhido[1] * (-1))
-    # print(aux)
-    # print(pontoEscolhido)
-    
-    i = 0
-    while ponto[0] != pontoEscolhido[0] and ponto[1] != pontoEscolhido[1]:
-       
-        i += 1
-        # print(ponto)
-        ponto = somaModular(ponto, aux, p, d)
-    print(i)
-    return i
-
+#calcula o valor de lambda de modo que ((23 * n)+a) % b seja  = 0 sendo n um numero inteiro. 
 def modulo(a, b, p):
-    cont = 1
-    
-    if b<0:
-        b = b*(-1)
+    cont = 0
+    i = 0
     
     while True:
-        if b==0:
-            b = 1
-        if (( (p * cont) + a) % b) == 0:
-            Lambda =  ( (p * cont) + a ) / b
-            
+        i = 23*cont
+        if (( i + a) % b) == 0:
+            Lambda =  ( i + a ) / b
+           
             return Lambda#( (p * cont) + a ) % b
         cont +=1
 
-
 ######################################################################################################3
-
-
-# ######################################################################
-# def calculaR(curva):
-#     P = curva.pontoEscolhido
-#     Q = curva.pontoEscolhido
-#     for i in range(curva.k):
-#         Lambda  = calculaLambda(P, Q, curva.d, curva.p)
-#         xr = ( (Lambda**2) - P[0] - Q[0]) % curva.p
-#         yr = ( Lambda * ( P[0] - xr) - P[1]) % curva.p 
-#         P = [xr, yr]
-
-#     curva.pontoR = P 
-#     return curva   
-
-# def funcModulo(x):
-#     return ''
-
-# def calculaLambda(pontoP, pontoQ, d, p):
-#     if pontoP[0] == pontoQ[0] and pontoP[1] == pontoQ[1]:
-#         #formula de lambda para P = Q
-#         a = (3 * (pontoP[0]**2))
-#         b = (2 * pontoP[1])
-#         return modulo(a, b, p)
-#     else:
-#         #Ponto
-#         a = (pontoQ[1] - pontoP[1]) 
-#         b = (pontoQ[0] - pontoP[0])
-#         return modulo(a, b, p)
-
-# def modulo(a, b, p):
-#     cont = 1
-#     print('a: '+ str(a)+ ' b: '+ str(b))
-        
-#     while True:
-#         print(cont)
-#         if (( (p * cont) + a) % b) == 0:
-#             Lambda =  ( (p * cont) + a ) / b
-#             print('Lambda: '+str(Lambda))
-#             return Lambda#( (p * cont) + a ) % b
-#         cont +=1
-######################################################################################################3
-
+#Escolhe um ponto Q que esta contido na lista de pontos da curva, 
+# se o ponto informado nao estiver na lista ele pede para informar de novo
 def escolhePonto(curva):
     ponto = []
     while ponto not in curva.pontos:
@@ -160,7 +114,7 @@ def escolhePonto(curva):
     return curva
 
     
-
+# função que calcula os pontos da curva E23(1,1) para posteriormente o usuario escolher um ponto Q
 def encontraListaPontos(curva):
     
     for i in range(curva.p):
@@ -177,44 +131,15 @@ def encontraListaPontos(curva):
     return curva
 
 
-
+# Apemas imprime os Parametros p, d, e e alista de pontos pro usuario escolher
 def PrintaParametros(curva):
     print('\033[32m'+'Parâmetro d = '+str(curva.d)+' Parâmetro e = '+str(curva.e)+' Parâmetro p = '+str(curva.p)+'\033[0;0m')
     print('\033[32m'+'Lista de Pontos '+ str(curva.pontos)+'\033[0;0m')
-def recebeParametros(curva):
-    '''
-    #Recebe o Parametro 'd'
-    print('Informe o Parâmetro d maior que 0')
-    d = int(input())
-    while d < 1:
-        print('Informe o Parâmetro d maior que 0')
-        d = int(input())
-    curva.d = d
 
-    #Recebe o parametro 'e'
-    print('Informe o Parâmetro e maior que 0')
-    e = int(input())
-    while e < 1:
-        print('Informe o Parâmetro e maior que 0')
-        e = int(input())
-    curva.e = e
-
-    #Recebe o Parametro 'p'
-    print('Informe o Parâmetro p maior que 0')
-    p = int(input())
-    while d < 1:
-        print('Informe o Parâmetro p maior que 0')
-        p = int(input())
-    curva.p = p
-'''
-    curva.d = 1
-    curva.e = 1
-    curva.p = 23
-    return curva
-
+#Salva em arquivo as chaves publica e privada  
 def salvaEmArquivo(curva):
     #funcao que salva em arquivo
-
+    print("CURVA valores k=",curva.k,  " e=",  curva.e, " d=", curva.d," p=",  curva.p, "R=", curva.pontoR)
     #Salva chave Pública
     chavePublica = ''
 
